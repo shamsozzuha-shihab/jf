@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaRocket,
   FaShieldAlt,
@@ -23,6 +23,7 @@ import {
   FaImages,
   FaSync,
   FaBook,
+  FaExpand,
 } from "react-icons/fa";
 import FancyCalendar from "../components/FancyCalendar";
 import useAutoRefresh from "../hooks/useAutoRefresh";
@@ -42,6 +43,8 @@ const Home = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Auto-refresh gallery every 5 minutes to reduce unnecessary renders
   const manualRefreshGallery = useAutoRefresh(
@@ -144,6 +147,34 @@ const Home = () => {
     setSearchResults([]);
     setShowSearchResults(false);
   }, []);
+
+  // Handle image click to open modal
+  const handleImageClick = useCallback((image) => {
+    setSelectedImage(image);
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  }, []);
+
+  // Handle modal close
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedImage(null);
+    document.body.style.overflow = 'unset'; // Restore scrolling
+  }, []);
+
+  // Handle keyboard navigation in modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isModalOpen) return;
+      
+      if (e.key === 'Escape') {
+        handleCloseModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, handleCloseModal]);
 
   return (
     <div className="home">
@@ -476,6 +507,7 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => handleImageClick(image)}
                 >
                   <div className="gallery-image">
                     <img
@@ -485,6 +517,9 @@ const Home = () => {
                       loading="lazy"
                       decoding="async"
                     />
+                    <div className="gallery-expand-icon">
+                      <FaExpand />
+                    </div>
                     <div className="gallery-overlay">
                       <div className="gallery-date">
                         {image.eventDate
@@ -550,6 +585,12 @@ const Home = () => {
                   transition={{ duration: 0.6 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => handleImageClick({
+                    imageUrl: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=75",
+                    title: "Executive Board Meeting",
+                    description: "Strategic discussions and policy decisions at JCCI headquarters",
+                    eventDate: "2024-09-15"
+                  })}
                 >
                   <div className="gallery-image">
                     <img
@@ -559,6 +600,9 @@ const Home = () => {
                       loading="lazy"
                       decoding="async"
                     />
+                    <div className="gallery-expand-icon">
+                      <FaExpand />
+                    </div>
                     <div className="gallery-overlay">
                       <div className="gallery-date">Sep 15, 2024</div>
                       <h3>Executive Board Meeting</h3>
@@ -577,6 +621,12 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: 0.1 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => handleImageClick({
+                    imageUrl: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=75",
+                    title: "Conference Room Meeting",
+                    description: "Large-scale business discussions and strategic planning",
+                    eventDate: "2024-09-12"
+                  })}
                 >
                   <div className="gallery-image">
                     <img
@@ -586,6 +636,9 @@ const Home = () => {
                       loading="lazy"
                       decoding="async"
                     />
+                    <div className="gallery-expand-icon">
+                      <FaExpand />
+                    </div>
                     <div className="gallery-overlay">
                       <div className="gallery-date">Sep 12, 2024</div>
                       <h3>Conference Room Meeting</h3>
@@ -603,6 +656,12 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: 0.2 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => handleImageClick({
+                    imageUrl: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=75",
+                    title: "Partnership Agreement",
+                    description: "Formal handshake ceremony for strategic business partnerships",
+                    eventDate: "2024-09-10"
+                  })}
                 >
                   <div className="gallery-image">
                     <img
@@ -612,6 +671,9 @@ const Home = () => {
                       loading="lazy"
                       decoding="async"
                     />
+                    <div className="gallery-expand-icon">
+                      <FaExpand />
+                    </div>
                     <div className="gallery-overlay">
                       <div className="gallery-date">Sep 10, 2024</div>
                       <h3>Partnership Agreement</h3>
@@ -630,6 +692,12 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: 0.3 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => handleImageClick({
+                    imageUrl: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=75",
+                    title: "International Delegation",
+                    description: "High-level discussions with international business leaders",
+                    eventDate: "2024-09-08"
+                  })}
                 >
                   <div className="gallery-image">
                     <img
@@ -639,6 +707,9 @@ const Home = () => {
                       loading="lazy"
                       decoding="async"
                     />
+                    <div className="gallery-expand-icon">
+                      <FaExpand />
+                    </div>
                     <div className="gallery-overlay">
                       <div className="gallery-date">Sep 8, 2024</div>
                       <h3>International Delegation</h3>
@@ -657,6 +728,12 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: 0.4 }}
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => handleImageClick({
+                    imageUrl: "https://images.unsplash.com/photo-1556761175-4b46a572b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=75",
+                    title: "Policy Discussion",
+                    description: "Shaping business policies and regulatory frameworks",
+                    eventDate: "2024-09-05"
+                  })}
                 >
                   <div className="gallery-image">
                     <img
@@ -666,6 +743,9 @@ const Home = () => {
                       loading="lazy"
                       decoding="async"
                     />
+                    <div className="gallery-expand-icon">
+                      <FaExpand />
+                    </div>
                     <div className="gallery-overlay">
                       <div className="gallery-date">Sep 5, 2024</div>
                       <h3>Policy Discussion</h3>
@@ -909,6 +989,56 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Image Modal */}
+      <AnimatePresence>
+        {isModalOpen && selectedImage && (
+          <motion.div
+            className="image-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCloseModal}
+          >
+            <motion.div
+              className="image-modal-content"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button className="image-modal-close" onClick={handleCloseModal}>
+                <FaTimes />
+              </button>
+              <div className="image-modal-image-container">
+                <img
+                  src={selectedImage.imageUrl}
+                  alt={selectedImage.title || selectedImage.altText}
+                  className="image-modal-image"
+                />
+              </div>
+              <div className="image-modal-info">
+                <h3>{selectedImage.title}</h3>
+                <p>{selectedImage.description}</p>
+                {selectedImage.eventDate && (
+                  <div className="image-modal-date">
+                    📅 {new Date(selectedImage.eventDate).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </div>
+                )}
+                {selectedImage.eventLocation && (
+                  <div className="image-modal-location">
+                    📍 {selectedImage.eventLocation}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
