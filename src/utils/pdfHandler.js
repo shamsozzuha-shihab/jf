@@ -191,7 +191,10 @@ class PDFHandler {
       const response = await fetch(pdfFile.url);
       
       if (response.ok) {
-        const blob = await response.blob();
+        // Convert to blob with proper PDF MIME type
+        const blob = new Blob([await response.arrayBuffer()], { 
+          type: 'application/pdf' 
+        });
         this._downloadBlob(blob, filename);
         return true;
       } else {
@@ -222,7 +225,10 @@ class PDFHandler {
       const response = await fetch(pdfUrl);
 
       if (response.ok) {
-        const blob = await response.blob();
+        // Convert to blob with proper PDF MIME type
+        const blob = new Blob([await response.arrayBuffer()], { 
+          type: 'application/pdf' 
+        });
         this._downloadBlob(blob, filename);
         return true;
       } else {
