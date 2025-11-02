@@ -26,8 +26,8 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    // Initialize socket connection - Always use Render backend
-    const socketUrl = "https://jamalpur-chamber-backend-b61d.onrender.com";
+    // Initialize socket connection - Use env variable if available, otherwise fallback
+    const socketUrl = process.env.REACT_APP_SOCKET_URL || "https://jamalpur-chamber-backend-b61d.onrender.com";
     const newSocket = io(socketUrl, {
       transports: ["polling", "websocket"], // Try polling first, then websocket
       timeout: 30000, // Increased timeout

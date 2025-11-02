@@ -1,6 +1,5 @@
-// Always use Render backend (production deployment)
-// This ensures the frontend always uses the deployed backend on Render
-const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+// Use environment variable if available, otherwise fallback to hardcoded Render backend
+const PRODUCTION_API = process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api";
 const API_BASE_URL = PRODUCTION_API;
 
 class ApiService {
