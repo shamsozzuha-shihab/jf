@@ -191,12 +191,21 @@ class PDFHandler {
       const response = await fetch(pdfFile.url);
       
       if (response.ok) {
-        // Convert to blob with proper PDF MIME type
-        const blob = new Blob([await response.arrayBuffer()], { 
-          type: 'application/pdf' 
-        });
-        this._downloadBlob(blob, filename);
-        return true;
+        // Get the blob from response - Cloudinary already sends correct MIME type
+        const blob = await response.blob();
+        
+        // Ensure it's a PDF blob
+        if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
+          this._downloadBlob(blob, filename);
+          return true;
+        } else {
+          // If MIME type is wrong, create new blob with correct type
+          console.warn("Incorrect MIME type detected, correcting...");
+          const arrayBuffer = await blob.arrayBuffer();
+          const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+          this._downloadBlob(pdfBlob, filename);
+          return true;
+        }
       } else {
         // Fallback to direct link method
         this._downloadDirect(pdfFile.url, filename);
@@ -225,12 +234,21 @@ class PDFHandler {
       const response = await fetch(pdfUrl);
 
       if (response.ok) {
-        // Convert to blob with proper PDF MIME type
-        const blob = new Blob([await response.arrayBuffer()], { 
-          type: 'application/pdf' 
-        });
-        this._downloadBlob(blob, filename);
-        return true;
+        // Get the blob from response
+        const blob = await response.blob();
+        
+        // Ensure it's a PDF blob
+        if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
+          this._downloadBlob(blob, filename);
+          return true;
+        } else {
+          // If MIME type is wrong, create new blob with correct type
+          console.warn("Incorrect MIME type detected, correcting...");
+          const arrayBuffer = await blob.arrayBuffer();
+          const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+          this._downloadBlob(pdfBlob, filename);
+          return true;
+        }
       } else {
         // Fallback to direct link method
         this._downloadDirect(pdfUrl, filename);
