@@ -280,7 +280,11 @@ class PDFHandler {
     link.target = "_blank";
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    
+    // Delay removal to allow download to start
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 100);
   }
 }
 
