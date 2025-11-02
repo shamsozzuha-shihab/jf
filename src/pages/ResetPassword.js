@@ -7,33 +7,75 @@ import { validatePassword, validationMessages } from '../utils/validation';
 import './Auth.css';
 
 const ResetPassword = () => {
-  const { token } = useParams();
+  const { token: rawToken } = useParams();
   const navigate = useNavigate();
+  
+  // Decode token from URL in case it has special characters
+  const token = rawToken ? decodeURIComponent(rawToken) : null;
+  
+  console.log('ResetPassword component rendered');
+  console.log('Raw token from URL:', rawToken);
+  console.log('Decoded token:', token);
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false); // Start as false so form shows immediately
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [confirmError, setConfirmError] = useState('');
+  const [tokenValid, setTokenValid] = useState(false);
 
   useEffect(() => {
+    // Always set verifying to false after a short delay to ensure form shows
+    const timer = setTimeout(() => {
+      setVerifying(false);
+    }, 500);
+    
     if (!token) {
       setError('Invalid reset link. Please request a new password reset.');
+      setVerifying(false);
     } else {
-      // Optionally verify the token
-      verifyToken(token);
+      // Verify the token (non-blocking - form will still show)
+      verifyToken(token).catch(() => {
+        // Silently handle errors - don't block rendering
+        setVerifying(false);
+      });
     }
+    
+    return () => clearTimeout(timer);
   }, [token]);
 
   const verifyToken = async (token) => {
     try {
-      await apiService.verifyResetToken(token);
+      setVerifying(true);
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Verification timeout')), 10000)
+      );
+      
+      await Promise.race([
+        apiService.verifyResetToken(token),
+        timeoutPromise
+      ]);
+      
+      setTokenValid(true);
+      setError(''); // Clear any previous errors
     } catch (err) {
-      setError('Invalid or expired reset link. Please request a new password reset.');
+      console.error('Token verification error:', err);
+      // Don't block the form - user can still try to reset
+      // Only show warning, not blocking error - user can still try
+      if (err.message && err.message.includes('Invalid or expired')) {
+        // Don't set error state - just log it, allow user to try anyway
+        console.warn('⚠️ Token verification failed, but you can still try to reset');
+      }
+      // For network/timeout errors, silently fail and let user try anyway
+      setTokenValid(false);
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -157,8 +199,9 @@ const ResetPassword = () => {
     );
   }
 
+  // Always render the form, even if there are errors
   return (
-    <div className="auth-page">
+    <div className="auth-page" style={{ minHeight: '100vh', padding: '2rem 0' }}>
       <div className="auth-container">
         <motion.div 
           className="auth-card"
@@ -172,10 +215,37 @@ const ResetPassword = () => {
             </div>
             <h1 className="auth-title">Reset Your Password</h1>
             <p className="auth-subtitle">Enter your new password below</p>
+            {token && (
+              <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                Token: {token.substring(0, 20)}...
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
-            {error && (
+            {verifying && (
+              <motion.div 
+                className="info-message"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  background: '#e3f2fd',
+                  border: '1px solid #2196f3',
+                  color: '#1976d2',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                <div className="spinner-small"></div>
+                Verifying reset link...
+              </motion.div>
+            )}
+            {error && error !== 'Invalid or expired reset link. Please request a new password reset.' && (
               <motion.div 
                 className="error-message"
                 initial={{ opacity: 0, y: -10 }}
@@ -261,7 +331,7 @@ const ResetPassword = () => {
             <button 
               type="submit" 
               className="btn btn-primary btn-full"
-              disabled={loading || !token}
+              disabled={loading || !token || verifying}
             >
               {loading ? (
                 <>

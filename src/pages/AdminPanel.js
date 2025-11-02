@@ -387,12 +387,19 @@ const AdminPanel = () => {
 
         // If submission has a backend _id, attempt to delete from backend
         if (submission && submission._id) {
-          console.log("Loaded from backend with _id:", submission._id);
+          console.log("Deleting from backend with _id:", submission._id);
+          try {
+            await apiService.deleteFormSubmission(submission._id);
+            console.log("Successfully deleted from backend");
+          } catch (apiError) {
+            console.error("Backend deletion failed:", apiError);
+            // Continue with local deletion even if backend fails
+          }
         }
 
         // Remove from local state
         const updatedSubmissions = submissions.filter(
-          (s) => s.id !== id && s._id !== id
+          (s) => (s.id !== id) && (s._id !== id)
         );
         setSubmissions(updatedSubmissions);
 
@@ -1221,7 +1228,7 @@ const AdminPanel = () => {
               <div className="submissions-grid">
                 {submissions.map((submission) => (
                   <motion.div
-                    key={submission.id}
+                    key={submission.id || submission._id}
                     className="submission-card"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1267,7 +1274,7 @@ const AdminPanel = () => {
                         )}
                         <button
                           className="btn-icon btn-delete"
-                          onClick={() => handleDeleteSubmission(submission.id)}
+                          onClick={() => handleDeleteSubmission(submission.id || submission._id)}
                           title="Delete submission"
                         >
                           <FaTrash />
@@ -1815,144 +1822,150 @@ const AdminPanel = () => {
 
       {/* News Tab Content */}
       {activeTab === "news" && (
-        <div className="news-list">
-          <h2>Manage News Articles ({news.length})</h2>
+        <div className="news-management">
+          <div className="news-header-section">
+            <div className="news-title-section">
+              <h2>News Management</h2>
+              <p className="news-subtitle">Create and manage news articles for your website</p>
+            </div>
+            <div className="news-stats">
+              <div className="stat-item">
+                <span className="stat-number">{news.length}</span>
+                <span className="stat-label">Total Articles</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-number">{news.filter(article => article.isActive).length}</span>
+                <span className="stat-label">Active</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-number">{news.filter(article => article.isFeatured).length}</span>
+                <span className="stat-label">Featured</span>
+              </div>
+            </div>
+          </div>
 
           {news.length === 0 ? (
-            <div className="empty-state">
-              <FaFileAlt className="empty-icon" />
+            <div className="empty-state-modern">
+              <div className="empty-icon-container">
+                <FaFileAlt className="empty-icon" />
+              </div>
               <h3>No news articles yet</h3>
-              <p>Create news articles to display on the home page.</p>
+              <p>Start creating engaging content for your audience</p>
+              <button
+                className="btn btn-primary btn-large"
+                onClick={() => setShowNewsForm(true)}
+              >
+                <FaPlus />
+                Create Your First Article
+              </button>
             </div>
           ) : (
-            <div className="news-grid-admin">
+            <div className="news-grid-modern">
               {news.map((article, index) => (
                 <motion.div
-                  key={article.id}
-                  className={`news-item-admin ${
+                  key={article.id || article._id || index}
+                  className={`news-card-modern ${
                     !article.isActive ? "inactive" : ""
-                  }`}
+                  } ${article.isFeatured ? "featured" : ""}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <div className="news-content">
-                    <div className="news-header">
-                      <h3 className="news-title">{article.title}</h3>
-                      <div className="news-badges">
-                        {article.isFeatured && (
-                          <span className="badge badge-featured">Featured</span>
-                        )}
-                        <span
-                          className={`badge badge-category badge-${article.category}`}
+                  {/* Featured Badge */}
+                  {article.isFeatured && (
+                    <div className="featured-badge">
+                      <FaBullhorn />
+                      <span>Featured</span>
+                    </div>
+                  )}
+
+                  {/* Article Image */}
+                  {article.imageUrl && (
+                    <div className="news-card-image">
+                      <img src={article.imageUrl} alt={article.title} />
+                      <div className="image-overlay">
+                        <div className="overlay-badges">
+                          <span className={`category-badge ${article.category}`}>
+                            {article.category}
+                          </span>
+                          <span className={`status-badge ${article.isActive ? "active" : "inactive"}`}>
+                            {article.isActive ? "Live" : "Draft"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Article Content */}
+                  <div className="news-card-content">
+                    <div className="news-card-header">
+                      <h3 className="news-card-title">{article.title}</h3>
+                      <div className="news-card-actions">
+                        <button
+                          className="action-btn edit-btn"
+                          onClick={() => handleEditNews(article)}
+                          title="Edit Article"
                         >
-                          {article.category}
-                        </span>
-                        <span
-                          className={`badge badge-status ${
-                            article.isActive ? "active" : "inactive"
+                          <FaEdit />
+                        </button>
+                        <button
+                          className={`action-btn ${
+                            article.isActive ? "deactivate-btn" : "activate-btn"
                           }`}
+                          onClick={() =>
+                            toggleNewsStatus(article.id || article._id, article.isActive)
+                          }
+                          title={article.isActive ? "Deactivate" : "Activate"}
                         >
-                          {article.isActive ? "Active" : "Inactive"}
-                        </span>
+                          {article.isActive ? <FaTimes /> : <FaPlus />}
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={() => handleDeleteNews(article.id || article._id)}
+                          title="Delete Article"
+                        >
+                          <FaTrash />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="news-body">
-                      <p className="news-preview">
-                        {article.content.length > 150
-                          ? `${article.content.substring(0, 150)}...`
+                    <div className="news-card-body">
+                      <p className="news-card-preview">
+                        {article.content.length > 120
+                          ? `${article.content.substring(0, 120)}...`
                           : article.content}
                       </p>
+                    </div>
 
-                      {article.imageUrl && (
-                        <div className="news-image-preview">
-                          <img src={article.imageUrl} alt={article.title} />
+                    <div className="news-card-footer">
+                      <div className="news-card-meta">
+                        <div className="meta-item">
+                          <FaUser className="meta-icon" />
+                          <span>{article.author}</span>
+                        </div>
+                        <div className="meta-item">
+                          <FaCalendarAlt className="meta-icon" />
+                          <span>
+                            {new Date(article.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {article.updatedAt && article.updatedAt !== article.createdAt && (
+                        <div className="news-updated-info">
+                          <small>
+                            Updated {new Date(article.updatedAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </small>
                         </div>
                       )}
                     </div>
-
-                    <div className="news-meta">
-                      <div className="news-author">
-                        <FaUser className="meta-icon" />
-                        <span>{article.author}</span>
-                      </div>
-                      <div className="news-date">
-                        <FaCalendarAlt className="meta-icon" />
-                        <span>
-                          Created:{" "}
-                          {new Date(article.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}{" "}
-                          at{" "}
-                          {new Date(article.createdAt).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </span>
-                      </div>
-                      {article.updatedAt &&
-                        article.updatedAt !== article.createdAt && (
-                          <div className="news-updated">
-                            <FaCalendarAlt className="meta-icon" />
-                            <span>
-                              Updated:{" "}
-                              {new Date(article.updatedAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                }
-                              )}{" "}
-                              at{" "}
-                              {new Date(article.updatedAt).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-
-                  <div className="news-actions">
-                    <button
-                      className="btn-icon btn-edit"
-                      onClick={() => handleEditNews(article)}
-                      title="Edit Article"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className={`btn-icon ${
-                        article.isActive ? "btn-deactivate" : "btn-activate"
-                      }`}
-                      onClick={() =>
-                        toggleNewsStatus(article.id, article.isActive)
-                      }
-                      title={article.isActive ? "Deactivate" : "Activate"}
-                    >
-                      {article.isActive ? <FaTimes /> : <FaPlus />}
-                    </button>
-                    <button
-                      className="btn-icon btn-delete"
-                      onClick={() => handleDeleteNews(article.id)}
-                      title="Delete Article"
-                    >
-                      <FaTrash />
-                    </button>
                   </div>
                 </motion.div>
               ))}
@@ -1965,17 +1978,30 @@ const AdminPanel = () => {
       {showNewsForm && (
         <div className="modal-overlay">
           <motion.div
-            className="modal news-form-modal"
+            className="modal news-form-modal-modern"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
           >
-            <div className="modal-header">
-              <h2>
-                {editingNews ? "Edit News Article" : "Create New Article"}
-              </h2>
+            <div className="modal-header-modern">
+              <div className="modal-title-section">
+                <div className="modal-icon">
+                  <FaFileAlt />
+                </div>
+                <div className="modal-title-content">
+                  <h2>
+                    {editingNews ? "Edit News Article" : "Create New Article"}
+                  </h2>
+                  <p>
+                    {editingNews 
+                      ? "Update your article content and settings" 
+                      : "Write engaging content for your audience"
+                    }
+                  </p>
+                </div>
+              </div>
               <button
-                className="btn-close"
+                className="btn-close-modern"
                 onClick={() => {
                   setShowNewsForm(false);
                   setEditingNews(null);
@@ -1992,78 +2018,113 @@ const AdminPanel = () => {
               </button>
             </div>
 
-            <form onSubmit={handleNewsSubmit} className="news-form-content">
-              <div className="form-group">
-                <label htmlFor="newsTitle">Article Title *</label>
-                <input
-                  type="text"
-                  id="newsTitle"
-                  name="title"
-                  value={newsFormData.title}
-                  onChange={handleNewsInputChange}
-                  required
-                  placeholder="Enter article title"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="newsContent">Article Content *</label>
-                <textarea
-                  id="newsContent"
-                  name="content"
-                  value={newsFormData.content}
-                  onChange={handleNewsInputChange}
-                  required
-                  rows="6"
-                  placeholder="Write your article content here..."
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="newsCategory">Category</label>
-                  <select
-                    id="newsCategory"
-                    name="category"
-                    value={newsFormData.category}
+            <form onSubmit={handleNewsSubmit} className="news-form-content-modern">
+              <div className="form-section-modern">
+                <div className="form-section-header">
+                  <h3>Article Details</h3>
+                  <p>Basic information about your article</p>
+                </div>
+                
+                <div className="form-group-modern">
+                  <label htmlFor="newsTitle">
+                    <FaFileAlt className="label-icon" />
+                    Article Title *
+                  </label>
+                  <input
+                    type="text"
+                    id="newsTitle"
+                    name="title"
+                    value={newsFormData.title}
                     onChange={handleNewsInputChange}
-                  >
-                    <option value="business">Business</option>
-                    <option value="policy">Policy</option>
-                    <option value="event">Event</option>
-                    <option value="announcement">Announcement</option>
-                  </select>
+                    required
+                    placeholder="Enter a compelling article title"
+                    className="form-input-modern"
+                  />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="newsImageUrl">Image URL (Optional)</label>
-                  <input
-                    type="url"
-                    id="newsImageUrl"
-                    name="imageUrl"
-                    value={newsFormData.imageUrl}
+                <div className="form-group-modern">
+                  <label htmlFor="newsContent">
+                    <FaFileAlt className="label-icon" />
+                    Article Content *
+                  </label>
+                  <textarea
+                    id="newsContent"
+                    name="content"
+                    value={newsFormData.content}
                     onChange={handleNewsInputChange}
-                    placeholder="https://example.com/image.jpg"
+                    required
+                    rows="6"
+                    placeholder="Write your article content here. Be engaging and informative..."
+                    className="form-textarea-modern"
                   />
                 </div>
               </div>
 
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="isFeatured"
-                    checked={newsFormData.isFeatured}
-                    onChange={handleNewsInputChange}
-                  />
-                  <span className="checkbox-text">Featured Article</span>
-                </label>
+              <div className="form-section-modern">
+                <div className="form-section-header">
+                  <h3>Article Settings</h3>
+                  <p>Configure how your article appears</p>
+                </div>
+
+                <div className="form-row-modern">
+                  <div className="form-group-modern">
+                    <label htmlFor="newsCategory">
+                      <FaBullhorn className="label-icon" />
+                      Category
+                    </label>
+                    <select
+                      id="newsCategory"
+                      name="category"
+                      value={newsFormData.category}
+                      onChange={handleNewsInputChange}
+                      className="form-select-modern"
+                    >
+                      <option value="business">Business</option>
+                      <option value="policy">Policy</option>
+                      <option value="event">Event</option>
+                      <option value="announcement">Announcement</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group-modern">
+                    <label htmlFor="newsImageUrl">
+                      <FaImage className="label-icon" />
+                      Image URL (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      id="newsImageUrl"
+                      name="imageUrl"
+                      value={newsFormData.imageUrl}
+                      onChange={handleNewsInputChange}
+                      placeholder="https://example.com/image.jpg"
+                      className="form-input-modern"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group-modern checkbox-group-modern">
+                  <label className="checkbox-label-modern">
+                    <input
+                      type="checkbox"
+                      name="isFeatured"
+                      checked={newsFormData.isFeatured}
+                      onChange={handleNewsInputChange}
+                      className="checkbox-modern"
+                    />
+                    <span className="checkbox-custom"></span>
+                    <div className="checkbox-content">
+                      <span className="checkbox-text">Featured Article</span>
+                      <span className="checkbox-description">Highlight this article on the homepage</span>
+                    </div>
+                  </label>
+                </div>
               </div>
 
-              <div className="form-actions">
+              <div className="form-actions-modern">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary-modern"
                   onClick={() => {
                     setShowNewsForm(false);
                     setEditingNews(null);
@@ -2076,16 +2137,17 @@ const AdminPanel = () => {
                     });
                   }}
                 >
+                  <FaTimes />
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary-modern"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <div className="spinner"></div>
+                      <div className="spinner-modern"></div>
                       {editingNews ? "Updating..." : "Creating..."}
                     </>
                   ) : (
@@ -2289,7 +2351,7 @@ const AdminPanel = () => {
             <p>Generated on: {new Date().toLocaleString()}</p>
             <div className="print-submissions">
               {submissions.map((submission, index) => (
-                <div key={submission.id} className="print-submission">
+                <div key={submission.id || submission._id} className="print-submission">
                   <h3>Submission #{index + 1}</h3>
                   <p>
                     <strong>Name:</strong> {submission.name}

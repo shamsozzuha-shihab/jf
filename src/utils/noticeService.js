@@ -2,7 +2,7 @@
 class NoticeService {
   constructor() {
     this.apiBaseUrl =
-      process.env.REACT_APP_API_URL || "https://jamalpur-vf.onrender.com/api";
+      process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api";
     this.cacheKey = "notices";
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
   }

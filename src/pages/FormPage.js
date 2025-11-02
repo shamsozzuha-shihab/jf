@@ -434,7 +434,7 @@ const FormPage = () => {
             const pdfResponse = await fetch(
               `${
                 process.env.REACT_APP_API_URL ||
-                "https://jamalpur-vf.onrender.com/api"
+                "https://jamalpur-chamber-backend-b61d.onrender.com/api"
               }/files/${submission.pdfFile.filename}`
             );
             if (pdfResponse.ok) {
@@ -518,7 +518,7 @@ const FormPage = () => {
         const response = await fetch(
           `${
             process.env.REACT_APP_API_URL ||
-            "https://jamalpur-vf.onrender.com/api"
+            "https://jamalpur-chamber-backend-b61d.onrender.com/api"
           }/files/${submission.pdfFile.filename}`
         );
         if (response.ok) {

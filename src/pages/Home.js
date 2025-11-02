@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   FaRocket,
@@ -9,11 +9,6 @@ import {
   FaGlobe,
   FaHandshake,
   FaBuilding,
-  FaBriefcase,
-  FaLightbulb,
-  FaNetworkWired,
-  FaFileContract,
-  FaGavel,
   FaPhone,
   FaEnvelope,
   FaMapMarkerAlt,
@@ -27,6 +22,7 @@ import {
   FaFilter,
   FaImages,
   FaSync,
+  FaBook,
 } from "react-icons/fa";
 import FancyCalendar from "../components/FancyCalendar";
 import useAutoRefresh from "../hooks/useAutoRefresh";
@@ -149,61 +145,6 @@ const Home = () => {
     setShowSearchResults(false);
   }, []);
 
-  // Memoize services array to prevent recreation on every render
-  const services = useMemo(
-    () => [
-      {
-        icon: <FaChartLine />,
-        title: "Trade and Finance Activities",
-        description:
-          "Along with coordinating and promoting the interest of its members- Chambers of Commerce, Trade, and Industrial Association, JCCI also plays a crucial role in trade facilitation and financial activities.",
-      },
-      {
-        icon: <FaGavel />,
-        title: "Policy Advocacy",
-        description:
-          "JCCI regularly conducts advocacy with the government on different fiscal, monetary and other policy issues for enabling ease of doing business and economic growth.",
-      },
-      {
-        icon: <FaHandshake />,
-        title: "CSR Activity",
-        description:
-          "JCCI takes part in different Corporate Social Responsibilities in order to enhance the social and environmental aspects of the country and community development.",
-      },
-      {
-        icon: <FaLightbulb />,
-        title: "Research & Planning",
-        description:
-          "JCCI collects statistical and additional necessary data to aid the trade and industry of the country in regard to development planning and policy formulation.",
-      },
-      {
-        icon: <FaFileContract />,
-        title: "Arbitration",
-        description:
-          "JCCI provides assistance to the businessmen all over the country to settle their domestic and international disputes at a minimum cost through arbitration services.",
-      },
-      {
-        icon: <FaNetworkWired />,
-        title: "Exchange of Business Delegation",
-        description:
-          "It is one of the crucial duties of JCCI to maintain the incoming and outgoing delegations along with arranging all necessary support for international business relations.",
-      },
-      {
-        icon: <FaUsers />,
-        title: "Networking with Strategic Partners",
-        description:
-          "JCCI maintains close liaison with the foreign National Chambers of Commerce and other Trade and Industrial Associations while initiating bilateral partnerships.",
-      },
-      {
-        icon: <FaBriefcase />,
-        title: "Seminar / Symposiums",
-        description:
-          "JCCI discusses and shares views on the crucial matters relevant to and affecting the national economy in various government forums and business conferences.",
-      },
-    ],
-    []
-  );
-
   return (
     <div className="home">
       {/* Hero Section */}
@@ -220,8 +161,7 @@ const Home = () => {
               transition={{ duration: 0.8 }}
             >
               <h1 className="hero-title">
-                Accelerating the{" "}
-                <span className="highlight">Trillion Dollar Journey</span>
+                ACCELERATING THE TRILLION DOLLAR JOURNEY
               </h1>
               <p className="hero-subtitle">
                 THE JAMALPUR CHAMBER OF COMMERCE AND INDUSTRY
@@ -247,115 +187,10 @@ const Home = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <FaHandshake />
+                  <FaBook />
                   Learn More
                 </motion.button>
               </div>
-
-              {/* Fancy Search Bar */}
-              <motion.div
-                className="search-container"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-              >
-                <div
-                  className={`search-bar ${isSearchFocused ? "focused" : ""}`}
-                >
-                  <div className="search-input-container">
-                    <FaSearch className="search-icon" />
-                    <input
-                      type="text"
-                      placeholder="Search news, events, and more..."
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      onFocus={() => setIsSearchFocused(true)}
-                      onBlur={() =>
-                        setTimeout(() => setIsSearchFocused(false), 200)
-                      }
-                      className="search-input"
-                    />
-                    {searchQuery && (
-                      <button className="search-clear" onClick={clearSearch}>
-                        <FaTimes />
-                      </button>
-                    )}
-                  </div>
-                  <button className="search-filter">
-                    <FaFilter />
-                  </button>
-                </div>
-
-                {/* Search Results Dropdown */}
-                {showSearchResults && searchResults.length > 0 && (
-                  <motion.div
-                    className="search-results"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="search-results-header">
-                      <span>Search Results ({searchResults.length})</span>
-                    </div>
-                    <div className="search-results-list">
-                      {searchResults.slice(0, 5).map((result, index) => (
-                        <motion.div
-                          key={`${result.type}-${result.id}`}
-                          className="search-result-item"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                        >
-                          <div className="result-icon">
-                            {result.type === "news" ? (
-                              <FaFileContract />
-                            ) : (
-                              <FaImages />
-                            )}
-                          </div>
-                          <div className="result-content">
-                            <h4 className="result-title">{result.title}</h4>
-                            <p className="result-description">
-                              {result.content}
-                            </p>
-                            <span className="result-date">
-                              {new Date(result.date).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {result.imageUrl && (
-                            <div className="result-image">
-                              <img src={result.imageUrl} alt={result.title} />
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                    {searchResults.length > 5 && (
-                      <div className="search-results-footer">
-                        <span>
-                          And {searchResults.length - 5} more results...
-                        </span>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-
-                {showSearchResults &&
-                  searchResults.length === 0 &&
-                  searchQuery && (
-                    <motion.div
-                      className="search-no-results"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <FaSearch className="no-results-icon" />
-                      <p>No results found for "{searchQuery}"</p>
-                      <span>Try different keywords or check your spelling</span>
-                    </motion.div>
-                  )}
-              </motion.div>
             </motion.div>
             <div className="hero-visual">
               <motion.div
@@ -364,49 +199,156 @@ const Home = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <div className="floating-cards">
-                  <motion.div
-                    className="floating-card card-1"
-                    animate={{ y: [0, -20, 0] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
+                <motion.img 
+                  src="/new5.jpg" 
+                  alt="JCCI Building" 
+                  className="hero-building-image"
+                  animate={{ 
+                    y: [0, -5, 0]
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                <div className="hero-badges">
+                  <motion.div 
+                    className="hero-badge growth-badge"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
                   >
                     <FaChartLine />
                     <span>Growth</span>
                   </motion.div>
-                  <motion.div
-                    className="floating-card card-2"
-                    animate={{ y: [0, 20, 0] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: 1,
-                    }}
-                  >
-                    <FaUsers />
-                    <span>Network</span>
-                  </motion.div>
-                  <motion.div
-                    className="floating-card card-3"
-                    animate={{ y: [0, -15, 0] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: 2,
-                    }}
+                  <motion.div 
+                    className="hero-badge security-badge"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.0, duration: 0.8 }}
                   >
                     <FaShieldAlt />
                     <span>Security</span>
+                  </motion.div>
+                  <motion.div 
+                    className="hero-badge network-badge"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 0.8 }}
+                  >
+                    <FaUsers />
+                    <span>Network</span>
                   </motion.div>
                 </div>
               </motion.div>
             </div>
           </div>
+          
+          {/* Search Bar Section - Moved inside hero */}
+          <motion.div
+            className="search-container hero-search"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <div
+              className={`search-bar ${isSearchFocused ? "focused" : ""}`}
+            >
+              <div className="search-input-container">
+                <FaSearch className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search news, events, and more..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() =>
+                    setTimeout(() => setIsSearchFocused(false), 200)
+                  }
+                  className="search-input"
+                />
+                {searchQuery && (
+                  <button className="search-clear" onClick={clearSearch}>
+                    <FaTimes />
+                  </button>
+                )}
+              </div>
+              <button className="search-filter">
+                <FaFilter />
+              </button>
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchResults.length > 0 && (
+              <motion.div
+                className="search-results"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="search-results-header">
+                  <span>Search Results ({searchResults.length})</span>
+                </div>
+                <div className="search-results-list">
+                  {searchResults.slice(0, 5).map((result, index) => (
+                    <motion.div
+                      key={`${result.type}-${result.id}`}
+                      className="search-result-item"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <div className="result-icon">
+                        {result.type === "news" ? (
+                          <FaSearch />
+                        ) : (
+                          <FaImages />
+                        )}
+                      </div>
+                      <div className="result-content">
+                        <h4 className="result-title">{result.title}</h4>
+                        <p className="result-description">
+                          {result.content}
+                        </p>
+                        <span className="result-date">
+                          {new Date(result.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {result.imageUrl && (
+                        <div className="result-image">
+                          <img src={result.imageUrl} alt={result.title} />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+                {searchResults.length > 5 && (
+                  <div className="search-results-footer">
+                    <span>
+                      And {searchResults.length - 5} more results...
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {showSearchResults &&
+              searchResults.length === 0 &&
+              searchQuery && (
+                <motion.div
+                  className="search-no-results"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <FaSearch className="no-results-icon" />
+                  <p>No results found for "{searchQuery}"</p>
+                  <span>Try different keywords or check your spelling</span>
+                </motion.div>
+              )}
+          </motion.div>
         </div>
       </section>
 
@@ -491,73 +433,7 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Services Section */}
-      <section className="services">
-        <div className="container">
-          <motion.div
-            className="section-header"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="section-title">What We Do</h2>
-            <p className="section-subtitle">
-              Comprehensive services to support your business growth and
-              development
-            </p>
-          </motion.div>
-
-          <div className="services-grid">
-            {services.map((service, index) => (
-              <motion.div
-                key={index}
-                className="service-card"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10, scale: 1.02 }}
-              >
-                <div className="service-icon">{service.icon}</div>
-                <h3 className="service-title">{service.title}</h3>
-                <p className="service-description">{service.description}</p>
-                <div className="service-read-more">
-                  <button className="btn btn-text">Read More</button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="stats">
-        <div className="container">
-          <div className="stats-grid">
-            {[
-              { number: "90", label: "Chambers" },
-              { number: "429", label: "Associations" },
-              { number: "19", label: "Joint Chambers" },
-              { number: "0", label: "G.B Members" },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                className="stat-item"
-                initial={{ opacity: 0, scale: 0.5 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <div className="stat-number">{stat.number}</div>
-                <div className="stat-label">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
+      
       {/* Professional Meetings Gallery */}
       <section className="meetings-gallery">
         <div className="container">
@@ -799,6 +675,32 @@ const Home = () => {
                 </motion.div>
               </>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="stats">
+        <div className="container">
+          <div className="stats-grid">
+            {[
+              { number: "90", label: "Chambers" },
+              { number: "429", label: "Associations" },
+              { number: "19", label: "Joint Chambers" },
+              { number: "0", label: "G.B Members" },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                className="stat-item"
+                initial={{ opacity: 0, scale: 0.5 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="stat-number">{stat.number}</div>
+                <div className="stat-label">{stat.label}</div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

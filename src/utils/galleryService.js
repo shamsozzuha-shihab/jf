@@ -2,7 +2,7 @@
 class GalleryService {
   constructor() {
     this.apiBaseUrl =
-      process.env.REACT_APP_API_URL || "https://jamalpur-vf.onrender.com/api";
+      process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api";
   }
 
   // Get gallery images from API

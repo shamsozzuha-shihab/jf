@@ -1,8 +1,11 @@
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "https://jamalpur-vf.onrender.com/api";
+// Always use Render backend (production deployment)
+// This ensures the frontend always uses the deployed backend on Render
+const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+const API_BASE_URL = PRODUCTION_API;
 
 class ApiService {
   constructor() {
+    // Always use production Render backend
     this.baseURL = API_BASE_URL;
     // Simple in-memory cache with TTL
     this.cache = new Map();
@@ -250,6 +253,14 @@ class ApiService {
   async getFormSubmissions() {
     const response = await fetch(`${this.baseURL}/forms/submissions`, {
       method: "GET",
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
+  async deleteFormSubmission(id) {
+    const response = await fetch(`${this.baseURL}/forms/submissions/${id}`, {
+      method: "DELETE",
       headers: this.getHeaders(),
     });
     return this.handleResponse(response);

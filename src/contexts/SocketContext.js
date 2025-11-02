@@ -15,16 +15,27 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
+
+  // Check if WebSocket is enabled via environment variable
+  const isWebSocketEnabled = process.env.REACT_APP_ENABLE_WEBSOCKET !== 'false';
 
   useEffect(() => {
-    // Initialize socket connection
-    const socketUrl =
-      process.env.REACT_APP_SOCKET_URL || "https://jamalpur-vf.onrender.com";
+    if (!isWebSocketEnabled) {
+      console.log("🔌 WebSocket disabled via environment variable");
+      return;
+    }
+
+    // Initialize socket connection - Always use Render backend
+    const socketUrl = "https://jamalpur-chamber-backend-b61d.onrender.com";
     const newSocket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      timeout: 20000,
+      transports: ["polling", "websocket"], // Try polling first, then websocket
+      timeout: 30000, // Increased timeout
       forceNew: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      maxReconnectionAttempts: 5,
     });
 
     // Connection event handlers
@@ -52,17 +63,31 @@ export const SocketProvider = ({ children }) => {
       setIsConnected(false);
     });
 
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
+      setIsConnected(true);
+    });
+
+    newSocket.on("reconnect_error", (error) => {
+      console.error("❌ WebSocket reconnection error:", error);
+    });
+
+    newSocket.on("reconnect_failed", () => {
+      console.error("❌ WebSocket reconnection failed after all attempts");
+      setIsConnected(false);
+    });
+
     setSocket(newSocket);
 
     // Cleanup on unmount
     return () => {
       newSocket.close();
     };
-  }, [isAdmin]);
+  }, [isAdmin, isWebSocketEnabled]);
 
   // Rejoin rooms when user role changes
   useEffect(() => {
-    if (socket && isConnected) {
+    if (socket && isConnected && isWebSocketEnabled) {
       if (isAdmin) {
         socket.emit("join-admin");
         console.log("👑 Rejoined admin room");
@@ -71,11 +96,11 @@ export const SocketProvider = ({ children }) => {
         console.log("👤 Rejoined user room");
       }
     }
-  }, [socket, isConnected, isAdmin]);
+  }, [socket, isConnected, isAdmin, isWebSocketEnabled]);
 
   const value = {
-    socket,
-    isConnected,
+    socket: isWebSocketEnabled ? socket : null,
+    isConnected: isWebSocketEnabled ? isConnected : false,
   };
 
   return (
