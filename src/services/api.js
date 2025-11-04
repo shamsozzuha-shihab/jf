@@ -1,10 +1,11 @@
-// Use environment variable if available, otherwise fallback to hardcoded Render backend
-const PRODUCTION_API = process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api";
-const API_BASE_URL = PRODUCTION_API;
+// Use local backend in development, production backend in production
+const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
 
 class ApiService {
   constructor() {
-    // Always use production Render backend
+    // Use local backend in development, production backend in production
     this.baseURL = API_BASE_URL;
     // Simple in-memory cache with TTL
     this.cache = new Map();
@@ -343,21 +344,13 @@ class ApiService {
   }
 
   async createNews(newsData) {
-    console.log("🌐 API: Creating news with data:", newsData);
-    console.log("🌐 API: URL:", `${this.baseURL}/news`);
-    console.log("🌐 API: Headers:", this.getHeaders());
-
     const response = await fetch(`${this.baseURL}/news`, {
       method: "POST",
       headers: this.getHeaders(),
       body: JSON.stringify(newsData),
     });
 
-    console.log("🌐 API: Response status:", response.status);
-    console.log("🌐 API: Response ok:", response.ok);
-
     const result = await this.handleResponse(response);
-    console.log("🌐 API: Response result:", result);
 
     // Clear cache after creating
     this.clearCache("news");

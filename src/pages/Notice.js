@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaBell, FaCalendarAlt, FaExclamationTriangle, FaInfoCircle, FaBullhorn, FaFilePdf, FaDownload, FaSync } from 'react-icons/fa';
+import { FaBell, FaCalendarAlt, FaExclamationTriangle, FaInfoCircle, FaBullhorn, FaFilePdf, FaDownload, FaSync, FaArrowRight } from 'react-icons/fa';
 import { useNotice } from '../contexts/NoticeContext';
 import { useSocket } from '../contexts/SocketContext';
 import pdfHandler from '../utils/pdfHandler';
@@ -12,6 +12,7 @@ const Notice = () => {
   const { notices, loading, refreshNotices } = useNotice();
   const { isConnected } = useSocket();
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [showAllNotices, setShowAllNotices] = useState(false);
   
   // Auto-refresh every 30 seconds
   const manualRefresh = useAutoRefresh(() => {
@@ -24,6 +25,11 @@ const Notice = () => {
   const filteredNotices = filter === 'all' 
     ? notices 
     : notices.filter(notice => (notice.priority || 'normal') === filter);
+
+  // Reset showAllNotices when filter changes
+  useEffect(() => {
+    setShowAllNotices(false);
+  }, [filter]);
 
   const getPriorityColor = (priority) => {
     const safePriority = priority || 'normal';
@@ -143,10 +149,11 @@ const Notice = () => {
             </div>
           ) : (
             <div className="notices-grid">
-              {filteredNotices.map((notice, index) => (
+              {(showAllNotices ? filteredNotices : filteredNotices.slice(0, 9)).map((notice, index) => (
                 <motion.div
                   key={notice.id || notice._id}
                   className="notice-card"
+                  data-priority={notice.priority || 'normal'}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -190,17 +197,23 @@ const Notice = () => {
                         <div className="pdf-actions">
                           <button 
                             className="view-pdf-btn"
-                            onClick={() => viewPDF(notice.pdfFile)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              viewPDF(notice.pdfFile);
+                            }}
                             title="View PDF"
                           >
-                            👁️ View
+                            <span>👁️</span> View
                           </button>
                           <button 
                             className="download-pdf-btn"
-                            onClick={() => downloadPDF(notice.pdfFile)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadPDF(notice.pdfFile);
+                            }}
                             title="Download PDF"
                           >
-                            <FaDownload className="download-icon" />
+                            <FaDownload />
                           </button>
                         </div>
                       </div>
@@ -212,11 +225,15 @@ const Notice = () => {
                   
                   <div className="notice-footer">
                     <span className="notice-author">
-                      By: {notice.author}
+                      THE JAMALPUR CHAMBER OF COMMERCE AND INDUSTRY
                     </span>
-                    {notice.updatedAt !== notice.createdAt && (
+                    {notice.updatedAt && notice.updatedAt !== notice.createdAt && (
                       <span className="notice-updated">
-                        Updated: {new Date(notice.updatedAt).toLocaleDateString()}
+                        Updated: {new Date(notice.updatedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
                       </span>
                     )}
                   </div>
@@ -235,6 +252,47 @@ const Notice = () => {
               <FaBell />
               <h3>No notices found</h3>
               <p>There are no notices in this category at the moment.</p>
+            </motion.div>
+          )}
+
+          {/* See More / Show Less Button */}
+          {filteredNotices.length > 9 && (
+            <motion.div
+              className="notice-see-more-container"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              {!showAllNotices ? (
+                <button
+                  className="notice-see-more-btn"
+                  onClick={() => {
+                    setShowAllNotices(true);
+                    window.scrollTo({
+                      top: document.querySelector('.notices-grid')?.offsetTop - 100 || 0,
+                      behavior: 'smooth'
+                    });
+                  }}
+                >
+                  <span>See More</span>
+                  <FaArrowRight />
+                </button>
+              ) : (
+                <button
+                  className="notice-see-more-btn"
+                  onClick={() => {
+                    setShowAllNotices(false);
+                    window.scrollTo({
+                      top: document.querySelector('.notices-grid')?.offsetTop - 100 || 0,
+                      behavior: 'smooth'
+                    });
+                  }}
+                >
+                  <span>Show Less</span>
+                  <FaArrowRight style={{ transform: 'rotate(180deg)' }} />
+                </button>
+              )}
             </motion.div>
           )}
         </div>

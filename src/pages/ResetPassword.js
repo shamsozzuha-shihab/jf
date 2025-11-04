@@ -13,9 +13,6 @@ const ResetPassword = () => {
   // Decode token from URL in case it has special characters
   const token = rawToken ? decodeURIComponent(rawToken) : null;
   
-  console.log('ResetPassword component rendered');
-  console.log('Raw token from URL:', rawToken);
-  console.log('Decoded token:', token);
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

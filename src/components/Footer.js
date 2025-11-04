@@ -8,6 +8,14 @@ import {
 import './Footer.css';
 
 const Footer = () => {
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const quickLinks = [
     { name: 'Home', path: '/' },
@@ -36,7 +44,7 @@ const Footer = () => {
             <ul className="footer-links">
               {quickLinks.map((link, index) => (
                 <li key={index}>
-                  <Link to={link.path} className="footer-link">
+                  <Link to={link.path} className="footer-link" onClick={scrollToTop}>
                     {link.name}
                   </Link>
                 </li>
@@ -50,7 +58,7 @@ const Footer = () => {
             <ul className="footer-links">
               {supportLinks.map((link, index) => (
                 <li key={index}>
-                  <Link to={link.path} className="footer-link">
+                  <Link to={link.path} className="footer-link" onClick={scrollToTop}>
                     {link.name}
                   </Link>
                 </li>
@@ -82,9 +90,9 @@ const Footer = () => {
           <div className="footer-bottom-content">
             <p>&copy; 2024 THE JAMALPUR CHAMBER OF COMMERCE AND INDUSTRY. All rights reserved.</p>
             <div className="footer-bottom-links">
-              <Link to="/privacy" className="footer-bottom-link">Privacy</Link>
-              <Link to="/terms" className="footer-bottom-link">Terms</Link>
-              <Link to="/cookies" className="footer-bottom-link">Cookies</Link>
+              <Link to="/privacy" className="footer-bottom-link" onClick={scrollToTop}>Privacy</Link>
+              <Link to="/terms" className="footer-bottom-link" onClick={scrollToTop}>Terms</Link>
+              <Link to="/cookies" className="footer-bottom-link" onClick={scrollToTop}>Cookies</Link>
             </div>
           </div>
         </div>

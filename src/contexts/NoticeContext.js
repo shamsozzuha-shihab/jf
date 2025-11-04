@@ -40,12 +40,10 @@ export const NoticeProvider = ({ children }) => {
     if (!socket || !isConnected) return;
 
     const handleNoticeCreated = (newNotice) => {
-      console.log('🔔 New notice created:', newNotice);
       setNotices(prevNotices => [newNotice, ...prevNotices]);
     };
 
     const handleNoticeUpdated = (updatedNotice) => {
-      console.log('📝 Notice updated:', updatedNotice);
       setNotices(prevNotices => 
         prevNotices.map(notice => 
           notice.id === updatedNotice.id || notice._id === updatedNotice.id 
@@ -56,7 +54,6 @@ export const NoticeProvider = ({ children }) => {
     };
 
     const handleNoticeDeleted = (deletedNotice) => {
-      console.log('🗑️ Notice deleted:', deletedNotice);
       setNotices(prevNotices => 
         prevNotices.filter(notice => 
           notice.id !== deletedNotice.id && notice._id !== deletedNotice.id
@@ -87,7 +84,6 @@ export const NoticeProvider = ({ children }) => {
         setNotices(updatedNotices);
         return result;
       } catch (apiError) {
-        console.log('API create failed, using localStorage fallback');
         
         // Fallback to localStorage
         const newNotice = {
@@ -121,7 +117,6 @@ export const NoticeProvider = ({ children }) => {
         setNotices(updatedNotices);
         return result;
       } catch (apiError) {
-        console.log('API update failed, using localStorage fallback');
         
         // Fallback to localStorage
         const updatedNotice = {
@@ -149,7 +144,6 @@ export const NoticeProvider = ({ children }) => {
         setNotices(updatedNotices);
         return true;
       } catch (apiError) {
-        console.log('API delete failed, using localStorage fallback');
         
         // Fallback to localStorage
         const updatedNotices = noticeService.deleteFromLocalStorage(id);

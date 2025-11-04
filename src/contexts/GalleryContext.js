@@ -99,12 +99,10 @@ export const GalleryProvider = ({ children }) => {
 
     const handleGalleryImageDeleted = (deletedImage) => {
       const imageId = deletedImage.id || deletedImage._id;
-      console.log("🔥 Socket event received: gallery-image-deleted", imageId);
       setGalleryImages((prevImages) => {
         const filtered = prevImages.filter(
           (image) => image.id !== imageId && image._id !== imageId
         );
-        console.log("Updated gallery images count:", filtered.length);
         return filtered;
       });
     };

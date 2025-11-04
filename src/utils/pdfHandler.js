@@ -19,30 +19,15 @@ class PDFHandler {
       return false;
     }
 
-    console.log("📄 pdfHandler.download: Attempting to download PDF:", {
-      hasFilename: !!pdfFile.filename,
-      hasFileId: !!pdfFile.fileId,
-      hasUrl: !!pdfFile.url,
-      hasPublicId: !!pdfFile.publicId,
-      hasData: !!pdfFile.data,
-      filename: pdfFile.filename,
-      originalName: pdfFile.originalName,
-      url: pdfFile.url,
-      size: pdfFile.size,
-    });
-
     try {
       if (pdfFile.url) {
         // Cloudinary format - download from URL
-        console.log("✅ Using Cloudinary URL download method");
         return await this._downloadFromUrl(pdfFile);
       } else if (pdfFile.filename || pdfFile.fileId) {
         // Legacy API format - download from server
-        console.log("✅ Using server download method");
         return await this._downloadFromServer(pdfFile);
       } else if (pdfFile.data) {
         // localStorage format - base64 data
-        console.log("✅ Using data URL download method");
         return this._downloadFromDataURL(pdfFile);
       } else {
         console.error(
@@ -67,34 +52,22 @@ class PDFHandler {
       return false;
     }
 
-    console.log("👁️ pdfHandler.view: Attempting to view PDF:", {
-      hasFilename: !!pdfFile.filename,
-      hasFileId: !!pdfFile.fileId,
-      hasUrl: !!pdfFile.url,
-      hasData: !!pdfFile.data,
-      filename: pdfFile.filename,
-      originalName: pdfFile.originalName,
-      url: pdfFile.url,
-    });
-
     try {
       if (pdfFile.url) {
         // Cloudinary format - open from URL
-        console.log("✅ Opening Cloudinary PDF URL:", pdfFile.url);
-        window.open(pdfFile.url, "_blank");
+        const normalizedUrl = this._normalizePdfUrl(pdfFile);
+        window.open(normalizedUrl, "_blank");
         return true;
       } else if (pdfFile.filename || pdfFile.fileId) {
         // Legacy API format - open from server
-        const pdfUrl = `${
-          process.env.REACT_APP_API_URL ||
-          "https://jamalpur-chamber-backend-b61d.onrender.com/api"
-        }/files/${pdfFile.filename || pdfFile.fileId}`;
-        console.log("✅ Opening PDF URL:", pdfUrl);
+        const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+        const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+        const API_BASE = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
+        const pdfUrl = `${API_BASE}/files/${pdfFile.filename || pdfFile.fileId}`;
         window.open(pdfUrl, "_blank");
         return true;
       } else if (pdfFile.data) {
         // localStorage format - open from data URL
-        console.log("✅ Opening data URL PDF");
         window.open(pdfFile.data, "_blank");
         return true;
       } else {
@@ -125,13 +98,13 @@ class PDFHandler {
 
       if (pdfFile.url) {
         // Cloudinary format - use direct URL
-        pdfUrl = pdfFile.url;
+        pdfUrl = this._normalizePdfUrl(pdfFile);
       } else if (pdfFile.filename || pdfFile.fileId) {
         // Legacy API format - construct server URL
-        pdfUrl = `${
-          process.env.REACT_APP_API_URL ||
-          "https://jamalpur-chamber-backend-b61d.onrender.com/api"
-        }/files/${pdfFile.filename || pdfFile.fileId}`;
+        const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+        const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+        const API_BASE = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
+        pdfUrl = `${API_BASE}/files/${pdfFile.filename || pdfFile.fileId}`;
       } else if (pdfFile.data) {
         // localStorage format - use data URL
         pdfUrl = pdfFile.data;
@@ -162,9 +135,19 @@ class PDFHandler {
    */
   getFilename(pdfFile) {
     if (!pdfFile) return "document.pdf";
-    return (
+    const baseName = (
       pdfFile.originalName || pdfFile.name || pdfFile.filename || "document.pdf"
     );
+
+    if (
+      pdfFile.mimetype &&
+      pdfFile.mimetype.toLowerCase() === "application/pdf" &&
+      !baseName.toLowerCase().endsWith(".pdf")
+    ) {
+      return `${baseName}.pdf`;
+    }
+
+    return baseName;
   }
 
   /**
@@ -185,36 +168,28 @@ class PDFHandler {
    */
   async _downloadFromUrl(pdfFile) {
     const filename = this.getFilename(pdfFile);
-    
+    const downloadUrl = this._normalizePdfUrl(pdfFile);
+
     try {
       // Try fetch method first (more reliable for large files)
-      const response = await fetch(pdfFile.url);
+      const response = await fetch(downloadUrl);
       
       if (response.ok) {
-        // Get the blob from response - Cloudinary already sends correct MIME type
-        const blob = await response.blob();
-        
-        // Ensure it's a PDF blob
-        if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
-          this._downloadBlob(blob, filename);
-          return true;
-        } else {
-          // If MIME type is wrong, create new blob with correct type
-          console.warn("Incorrect MIME type detected, correcting...");
-          const arrayBuffer = await blob.arrayBuffer();
-          const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
-          this._downloadBlob(pdfBlob, filename);
-          return true;
-        }
+        // Convert to blob with proper PDF MIME type
+        const blob = new Blob([await response.arrayBuffer()], { 
+          type: 'application/pdf' 
+        });
+        this._downloadBlob(blob, filename);
+        return true;
       } else {
         // Fallback to direct link method
-        this._downloadDirect(pdfFile.url, filename);
+        this._downloadDirect(downloadUrl, filename);
         return true;
       }
     } catch (error) {
       console.error("Fetch download failed, using direct method:", error);
       // Fallback to direct link method
-      this._downloadDirect(pdfFile.url, filename);
+      this._downloadDirect(downloadUrl, filename);
       return true;
     }
   }
@@ -224,9 +199,10 @@ class PDFHandler {
    * @private
    */
   async _downloadFromServer(pdfFile) {
-    const pdfUrl = `${
-      process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api"
-    }/files/${pdfFile.filename || pdfFile.fileId}`;
+    const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+    const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    const API_BASE = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
+    const pdfUrl = `${API_BASE}/files/${pdfFile.filename || pdfFile.fileId}`;
     const filename = this.getFilename(pdfFile);
 
     try {
@@ -234,21 +210,12 @@ class PDFHandler {
       const response = await fetch(pdfUrl);
 
       if (response.ok) {
-        // Get the blob from response
-        const blob = await response.blob();
-        
-        // Ensure it's a PDF blob
-        if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
-          this._downloadBlob(blob, filename);
-          return true;
-        } else {
-          // If MIME type is wrong, create new blob with correct type
-          console.warn("Incorrect MIME type detected, correcting...");
-          const arrayBuffer = await blob.arrayBuffer();
-          const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
-          this._downloadBlob(pdfBlob, filename);
-          return true;
-        }
+        // Convert to blob with proper PDF MIME type
+        const blob = new Blob([await response.arrayBuffer()], { 
+          type: 'application/pdf' 
+        });
+        this._downloadBlob(blob, filename);
+        return true;
       } else {
         // Fallback to direct link method
         this._downloadDirect(pdfUrl, filename);
@@ -309,6 +276,55 @@ class PDFHandler {
     setTimeout(() => {
       document.body.removeChild(link);
     }, 100);
+  }
+
+  _normalizePdfUrl(pdfFile) {
+    if (!pdfFile || !pdfFile.url) {
+      return null;
+    }
+
+    const isPdf =
+      pdfFile.mimetype &&
+      pdfFile.mimetype.toLowerCase() === "application/pdf";
+
+    if (!isPdf) {
+      return pdfFile.url;
+    }
+
+    try {
+      const urlObject = new URL(pdfFile.url);
+
+      if (
+        urlObject.hostname.includes("res.cloudinary.com") &&
+        urlObject.pathname.includes("/upload/")
+      ) {
+        urlObject.pathname = urlObject.pathname
+          .replace("/image/upload/", "/raw/upload/")
+          .replace("/auto/upload/", "/raw/upload/");
+      }
+
+      if (!urlObject.pathname.toLowerCase().endsWith(".pdf")) {
+        const segments = urlObject.pathname.split("/");
+        const lastSegment = segments.pop() || "document.pdf";
+        if (lastSegment.includes(".")) {
+          const base = lastSegment.split(".")[0];
+          segments.push(`${base}.pdf`);
+        } else {
+          segments.push(`${lastSegment}.pdf`);
+        }
+        urlObject.pathname = segments.join("/");
+      }
+      return urlObject.toString();
+    } catch (error) {
+      console.warn("⚠️ Failed to normalize PDF URL using URL API", error);
+      if (pdfFile.url.includes(".")) {
+        return pdfFile.url
+          .replace("/image/upload/", "/raw/upload/")
+          .replace("/auto/upload/", "/raw/upload/")
+          .replace(/(\.[a-zA-Z0-9]+)(\?.*)?$/, ".pdf$2");
+      }
+      return `${pdfFile.url}.pdf`;
+    }
   }
 }
 

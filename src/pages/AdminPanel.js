@@ -33,6 +33,7 @@ import {
   FaImage,
   FaMapMarkerAlt,
   FaUsers,
+  FaArrowRight,
 } from "react-icons/fa";
 import "./AdminPanel.css";
 
@@ -56,6 +57,12 @@ const AdminPanel = () => {
   const [submissions, setSubmissions] = useState([]);
   const [activeTab, setActiveTab] = useState("notices"); // 'notices', 'submissions', 'gallery', 'news', or 'admins'
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  
+  // See More state for each section
+  const [showAllNotices, setShowAllNotices] = useState(false);
+  const [showAllGallery, setShowAllGallery] = useState(false);
+  const [showAllNews, setShowAllNews] = useState(false);
+  const [showAllSubmissions, setShowAllSubmissions] = useState(false);
 
   // News management state
   const { news, refreshNews } = useNews();
@@ -281,6 +288,16 @@ const AdminPanel = () => {
     }
   };
 
+  const getPriorityColor = (priority) => {
+    const safePriority = priority || "normal";
+    switch (safePriority) {
+      case "high": return "#ef4444";
+      case "normal": return "#10b981";
+      case "low": return "#f59e0b";
+      default: return "#6b7280";
+    }
+  };
+
   // Admin management functions
   const loadAdmins = async () => {
     try {
@@ -387,10 +404,8 @@ const AdminPanel = () => {
 
         // If submission has a backend _id, attempt to delete from backend
         if (submission && submission._id) {
-          console.log("Deleting from backend with _id:", submission._id);
           try {
             await apiService.deleteFormSubmission(submission._id);
-            console.log("Successfully deleted from backend");
           } catch (apiError) {
             console.error("Backend deletion failed:", apiError);
             // Continue with local deletion even if backend fails
@@ -541,10 +556,27 @@ const AdminPanel = () => {
   // Gallery functions
   const handleGalleryInputChange = (e) => {
     const { name, value, files } = e.target;
-    setGalleryFormData({
-      ...galleryFormData,
-      [name]: files ? files[0] : value,
-    });
+    
+    if (files && files[0]) {
+      // Clean up previous preview URL if exists
+      if (galleryFormData.image && galleryFormData.image.preview) {
+        URL.revokeObjectURL(galleryFormData.image.preview);
+      }
+      
+      // Create preview URL for new file
+      const file = files[0];
+      file.preview = URL.createObjectURL(file);
+      
+      setGalleryFormData({
+        ...galleryFormData,
+        [name]: file,
+      });
+    } else {
+      setGalleryFormData({
+        ...galleryFormData,
+        [name]: value,
+      });
+    }
   };
 
   const handleGallerySubmit = async (e) => {
@@ -671,24 +703,15 @@ const AdminPanel = () => {
       try {
         const isOptimisticImage =
           !imageId || String(imageId).startsWith("temp-");
-        console.log(
-          "🗑️ Deleting image:",
-          imageId,
-          "isOptimistic:",
-          isOptimisticImage
-        );
 
         if (isOptimisticImage) {
           // Optimistic/temporary images: remove from state immediately
-          console.log("Removing optimistic image from state");
           removeImageOptimistically(imageId);
           setSuccess("Image removed successfully!");
         } else {
           // Real images: delete from API (socket event will update state)
           try {
-            console.log("Calling API to delete image:", imageId);
             await galleryService.deleteImage(imageId);
-            console.log("✅ API delete successful, waiting for socket event");
             setSuccess("Image deleted successfully!");
             // The socket event 'gallery-image-deleted' will update the state automatically
           } catch (apiError) {
@@ -735,20 +758,13 @@ const AdminPanel = () => {
 
       if (editingNews) {
         // Update existing news via API
-        console.log(
-          "📝 Updating news:",
-          editingNews.id || editingNews._id,
-          newsFormData
-        );
         await apiService.updateNews(
           editingNews.id || editingNews._id,
           newsFormData
         );
       } else {
         // Create new news via API
-        console.log("📰 Creating news:", newsFormData);
-        const result = await apiService.createNews(newsFormData);
-        console.log("✅ News created result:", result);
+        await apiService.createNews(newsFormData);
       }
 
       setSuccess(
@@ -902,8 +918,26 @@ const AdminPanel = () => {
           {activeTab === "gallery" && (
             <button
               className="btn btn-primary"
-              onClick={() => setShowGalleryForm(true)}
+              onClick={() => {
+                setShowGalleryForm(true);
+                // Reset form data when opening upload form
+                if (!editingGalleryImage) {
+                  setGalleryFormData({
+                    title: "",
+                    description: "",
+                    altText: "",
+                    category: "meeting",
+                    order: 0,
+                    image: null,
+                    eventDate: "",
+                    eventLocation: "",
+                    eventType: "",
+                    organizer: "",
+                  });
+                }
+              }}
               disabled={showGalleryForm}
+              title="Click to open image upload form"
             >
               <FaUpload />
               Upload Image
@@ -1131,8 +1165,9 @@ const AdminPanel = () => {
                 <p>Add your first notice to get started.</p>
               </div>
             ) : (
-              <div className="notices-grid">
-                {notices.map((notice) => (
+              <>
+                <div className="notices-grid">
+                  {(showAllNotices ? notices : notices.slice(0, 9)).map((notice) => (
                   <motion.div
                     key={notice.id || notice._id}
                     className={getPriorityClass(notice.priority)}
@@ -1142,9 +1177,17 @@ const AdminPanel = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="notice-header">
-                      <div className="notice-title">
-                        {getPriorityIcon(notice.priority)}
-                        <h3>{notice.title}</h3>
+                      <div className="notice-title-wrapper">
+                        <div className="notice-title">
+                          {getPriorityIcon(notice.priority)}
+                          <h3>{notice.title}</h3>
+                        </div>
+                        <div 
+                          className="notice-priority-badge"
+                          style={{ backgroundColor: getPriorityColor(notice.priority) }}
+                        >
+                          {(notice.priority || 'normal').toUpperCase()}
+                        </div>
                       </div>
                       <div className="notice-actions">
                         <button
@@ -1204,8 +1247,50 @@ const AdminPanel = () => {
                       )}
                     </div>
                   </motion.div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                
+                {/* See More / Show Less Button for Notices */}
+                {notices.length > 9 && (
+                  <motion.div
+                    className="admin-see-more-container"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    {!showAllNotices ? (
+                      <button
+                        className="admin-see-more-btn"
+                        onClick={() => {
+                          setShowAllNotices(true);
+                          window.scrollTo({
+                            top: document.querySelector('.notices-grid')?.offsetTop - 100 || 0,
+                            behavior: 'smooth'
+                          });
+                        }}
+                      >
+                        <span>See More</span>
+                        <FaArrowRight />
+                      </button>
+                    ) : (
+                      <button
+                        className="admin-see-more-btn"
+                        onClick={() => {
+                          setShowAllNotices(false);
+                          window.scrollTo({
+                            top: document.querySelector('.notices-grid')?.offsetTop - 100 || 0,
+                            behavior: 'smooth'
+                          });
+                        }}
+                      >
+                        <span>Show Less</span>
+                        <FaArrowRight style={{ transform: 'rotate(180deg)' }} />
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1225,8 +1310,9 @@ const AdminPanel = () => {
                 </p>
               </div>
             ) : (
-              <div className="submissions-grid">
-                {submissions.map((submission) => (
+              <>
+                <div className="submissions-grid">
+                  {(showAllSubmissions ? submissions : submissions.slice(0, 9)).map((submission) => (
                   <motion.div
                     key={submission.id || submission._id}
                     className="submission-card"
@@ -1318,8 +1404,50 @@ const AdminPanel = () => {
                       </div>
                     </div>
                   </motion.div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                
+                {/* See More / Show Less Button for Submissions */}
+                {submissions.length > 9 && (
+                  <motion.div
+                    className="admin-see-more-container"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    {!showAllSubmissions ? (
+                      <button
+                        className="admin-see-more-btn"
+                        onClick={() => {
+                          setShowAllSubmissions(true);
+                          window.scrollTo({
+                            top: document.querySelector('.submissions-grid')?.offsetTop - 100 || 0,
+                            behavior: 'smooth'
+                          });
+                        }}
+                      >
+                        <span>See More</span>
+                        <FaArrowRight />
+                      </button>
+                    ) : (
+                      <button
+                        className="admin-see-more-btn"
+                        onClick={() => {
+                          setShowAllSubmissions(false);
+                          window.scrollTo({
+                            top: document.querySelector('.submissions-grid')?.offsetTop - 100 || 0,
+                            behavior: 'smooth'
+                          });
+                        }}
+                      >
+                        <span>Show Less</span>
+                        <FaArrowRight style={{ transform: 'rotate(180deg)' }} />
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1348,8 +1476,9 @@ const AdminPanel = () => {
                 </p>
               </div>
             ) : (
-              <div className="gallery-grid-admin">
-                {galleryImages.map((image, index) => (
+              <>
+                <div className="gallery-grid-admin">
+                  {(showAllGallery ? galleryImages : galleryImages.slice(0, 9)).map((image, index) => (
                   <motion.div
                     key={image._id || image.id || index}
                     className="gallery-item-admin"
@@ -1473,8 +1602,50 @@ const AdminPanel = () => {
                       </div>
                     </div>
                   </motion.div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                
+                {/* See More / Show Less Button for Gallery */}
+                {galleryImages.length > 9 && (
+                  <motion.div
+                    className="admin-see-more-container"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    {!showAllGallery ? (
+                      <button
+                        className="admin-see-more-btn"
+                        onClick={() => {
+                          setShowAllGallery(true);
+                          window.scrollTo({
+                            top: document.querySelector('.gallery-grid-admin')?.offsetTop - 100 || 0,
+                            behavior: 'smooth'
+                          });
+                        }}
+                      >
+                        <span>See More</span>
+                        <FaArrowRight />
+                      </button>
+                    ) : (
+                      <button
+                        className="admin-see-more-btn"
+                        onClick={() => {
+                          setShowAllGallery(false);
+                          window.scrollTo({
+                            top: document.querySelector('.gallery-grid-admin')?.offsetTop - 100 || 0,
+                            behavior: 'smooth'
+                          });
+                        }}
+                      >
+                        <span>Show Less</span>
+                        <FaArrowRight style={{ transform: 'rotate(180deg)' }} />
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1482,12 +1653,38 @@ const AdminPanel = () => {
 
       {/* Gallery Upload Form */}
       {showGalleryForm && (
-        <div className="modal-overlay">
+        <div 
+          className="modal-overlay"
+          onClick={(e) => {
+            // Close modal when clicking on overlay (but not on modal content)
+            if (e.target === e.currentTarget) {
+              // Clean up preview URL if exists
+              if (galleryFormData.image && galleryFormData.image.preview) {
+                URL.revokeObjectURL(galleryFormData.image.preview);
+              }
+              setShowGalleryForm(false);
+              setEditingGalleryImage(null);
+              setGalleryFormData({
+                title: "",
+                description: "",
+                altText: "",
+                category: "meeting",
+                order: 0,
+                image: null,
+                eventDate: "",
+                eventLocation: "",
+                eventType: "",
+                organizer: "",
+              });
+            }
+          }}
+        >
           <motion.div
             className="modal-content gallery-form"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <div className="modal-title">
@@ -1499,6 +1696,10 @@ const AdminPanel = () => {
               <button
                 className="btn-close"
                 onClick={() => {
+                  // Clean up preview URL if exists
+                  if (galleryFormData.image && galleryFormData.image.preview) {
+                    URL.revokeObjectURL(galleryFormData.image.preview);
+                  }
                   setShowGalleryForm(false);
                   setEditingGalleryImage(null);
                   setGalleryFormData({
@@ -1514,6 +1715,7 @@ const AdminPanel = () => {
                     organizer: "",
                   });
                 }}
+                title="Close upload form"
               >
                 <FaTimes />
               </button>
@@ -1726,45 +1928,66 @@ const AdminPanel = () => {
                         required
                         className="file-input"
                       />
-                      <label htmlFor="image" className="file-upload-label">
+                      <label htmlFor="image" className="file-upload-label-enhanced">
                         <div className="upload-icon-container">
-                          <FaImage className="upload-icon" />
-                          <span className="upload-text">Choose Image File</span>
+                          <div className="upload-icon-wrapper">
+                            <FaImage className="upload-icon" />
+                          </div>
+                          <div className="upload-text-content">
+                            <span className="upload-text">Choose Image File</span>
+                            <span className="upload-hint">
+                              Click to browse or drag and drop your image here
+                            </span>
+                            <span className="upload-requirements">
+                              Supported formats: JPG, PNG, GIF, WebP (Max 10MB)
+                            </span>
+                          </div>
                         </div>
-                        <span className="upload-hint">
-                          Click to browse or drag and drop
-                        </span>
                       </label>
                     </div>
                     {galleryFormData.image && (
-                      <div className="file-preview">
-                        <div className="file-preview-content">
-                          <FaImage className="preview-icon" />
-                          <div className="preview-info">
-                            <span className="preview-name">
-                              {galleryFormData.image.name}
-                            </span>
-                            <span className="preview-size">
-                              {(
-                                galleryFormData.image.size /
-                                1024 /
-                                1024
-                              ).toFixed(2)}{" "}
-                              MB
-                            </span>
+                      <div className="file-preview-enhanced">
+                        <div className="preview-image-container">
+                          <img
+                            src={galleryFormData.image.preview}
+                            alt="Preview"
+                            className="preview-image"
+                          />
+                          <div className="preview-overlay">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // Clean up preview URL
+                                if (galleryFormData.image && galleryFormData.image.preview) {
+                                  URL.revokeObjectURL(galleryFormData.image.preview);
+                                }
+                                setGalleryFormData({
+                                  ...galleryFormData,
+                                  image: null,
+                                });
+                              }}
+                              className="remove-file-btn-enhanced"
+                              title="Remove image"
+                            >
+                              <FaTimes />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setGalleryFormData({
-                                ...galleryFormData,
-                                image: null,
-                              })
-                            }
-                            className="remove-file-btn"
-                          >
-                            <FaTimes />
-                          </button>
+                        </div>
+                        <div className="preview-info-enhanced">
+                          <div className="preview-info-item">
+                            <FaImage className="preview-info-icon" />
+                            <div className="preview-info-content">
+                              <span className="preview-name">
+                                {galleryFormData.image.name}
+                              </span>
+                              <span className="preview-size">
+                                {(galleryFormData.image.size / 1024 / 1024).toFixed(2)} MB
+                              </span>
+                            </div>
+                          </div>
+                          <div className="preview-status">
+                            <span className="status-badge ready">Ready to upload</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1778,6 +2001,10 @@ const AdminPanel = () => {
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => {
+                    // Clean up preview URL if exists
+                    if (galleryFormData.image && galleryFormData.image.preview) {
+                      URL.revokeObjectURL(galleryFormData.image.preview);
+                    }
                     setShowGalleryForm(false);
                     setEditingGalleryImage(null);
                     setGalleryFormData({
@@ -1860,8 +2087,9 @@ const AdminPanel = () => {
               </button>
             </div>
           ) : (
-            <div className="news-grid-modern">
-              {news.map((article, index) => (
+            <>
+              <div className="news-grid-modern">
+                {(showAllNews ? news : news.slice(0, 9)).map((article, index) => (
                 <motion.div
                   key={article.id || article._id || index}
                   className={`news-card-modern ${
@@ -1968,40 +2196,89 @@ const AdminPanel = () => {
                     </div>
                   </div>
                 </motion.div>
-              ))}
-            </div>
+                ))}
+              </div>
+              
+              {/* See More / Show Less Button for News */}
+              {news.length > 9 && (
+                <motion.div
+                  className="admin-see-more-container"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  {!showAllNews ? (
+                    <button
+                      className="admin-see-more-btn"
+                      onClick={() => {
+                        setShowAllNews(true);
+                        window.scrollTo({
+                          top: document.querySelector('.news-grid-modern')?.offsetTop - 100 || 0,
+                          behavior: 'smooth'
+                        });
+                      }}
+                    >
+                      <span>See More</span>
+                      <FaArrowRight />
+                    </button>
+                  ) : (
+                    <button
+                      className="admin-see-more-btn"
+                      onClick={() => {
+                        setShowAllNews(false);
+                        window.scrollTo({
+                          top: document.querySelector('.news-grid-modern')?.offsetTop - 100 || 0,
+                          behavior: 'smooth'
+                        });
+                      }}
+                    >
+                      <span>Show Less</span>
+                      <FaArrowRight style={{ transform: 'rotate(180deg)' }} />
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {/* News Form Modal */}
       {showNewsForm && (
-        <div className="modal-overlay">
+        <div 
+          className="modal-overlay"
+          onClick={(e) => {
+            // Close modal when clicking on overlay (but not on modal content)
+            if (e.target === e.currentTarget) {
+              setShowNewsForm(false);
+              setEditingNews(null);
+              setNewsFormData({
+                title: "",
+                content: "",
+                category: "business",
+                imageUrl: "",
+                isFeatured: false,
+              });
+            }
+          }}
+        >
           <motion.div
-            className="modal news-form-modal-modern"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            className="modal-content news-form-modal"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header-modern">
-              <div className="modal-title-section">
-                <div className="modal-icon">
-                  <FaFileAlt />
-                </div>
-                <div className="modal-title-content">
-                  <h2>
-                    {editingNews ? "Edit News Article" : "Create New Article"}
-                  </h2>
-                  <p>
-                    {editingNews 
-                      ? "Update your article content and settings" 
-                      : "Write engaging content for your audience"
-                    }
-                  </p>
-                </div>
+            <div className="modal-header">
+              <div className="modal-title">
+                <FaFileAlt className="modal-icon" />
+                <h2>
+                  {editingNews ? "Edit News Article" : "Create New Article"}
+                </h2>
               </div>
               <button
-                className="btn-close-modern"
+                className="btn-close"
                 onClick={() => {
                   setShowNewsForm(false);
                   setEditingNews(null);
@@ -2013,12 +2290,13 @@ const AdminPanel = () => {
                     isFeatured: false,
                   });
                 }}
+                title="Close form"
               >
                 <FaTimes />
               </button>
             </div>
 
-            <form onSubmit={handleNewsSubmit} className="news-form-content-modern">
+            <form onSubmit={handleNewsSubmit} className="news-form-content">
               <div className="form-section-modern">
                 <div className="form-section-header">
                   <h3>Article Details</h3>
@@ -2147,7 +2425,7 @@ const AdminPanel = () => {
                 >
                   {loading ? (
                     <>
-                      <div className="spinner-modern"></div>
+                      <div className="spinner-small"></div>
                       {editingNews ? "Updating..." : "Creating..."}
                     </>
                   ) : (

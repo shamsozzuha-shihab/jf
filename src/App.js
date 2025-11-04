@@ -7,6 +7,7 @@ import { GalleryProvider } from './contexts/GalleryContext';
 import { NewsProvider } from './contexts/NewsContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import './App.css';
@@ -54,6 +55,7 @@ function App() {
             <NewsProvider>
               <Router>
           <div className="App">
+            <ScrollToTop />
             <Navbar />
             <main className="main-content">
               <Suspense fallback={<PageLoader />}>

@@ -380,7 +380,6 @@ const FormPage = () => {
   };
 
   const handleDownloadPDF = async (submission) => {
-    console.log("Downloading PDF for submission:", submission);
     if (submission.pdfFile) {
       const success = await pdfHandler.download(submission.pdfFile);
       if (!success) {
@@ -394,7 +393,6 @@ const FormPage = () => {
   };
 
   const handleViewPDF = (submission) => {
-    console.log("Viewing PDF for submission:", submission);
     if (submission.pdfFile) {
       const success = pdfHandler.view(submission.pdfFile);
       if (!success) {
@@ -431,11 +429,11 @@ const FormPage = () => {
         if (submission.pdfFile && submission.pdfFile.filename) {
           try {
             // Fetch PDF file from server
+            const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+            const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+            const API_BASE = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
             const pdfResponse = await fetch(
-              `${
-                process.env.REACT_APP_API_URL ||
-                "https://jamalpur-chamber-backend-b61d.onrender.com/api"
-              }/files/${submission.pdfFile.filename}`
+              `${API_BASE}/files/${submission.pdfFile.filename}`
             );
             if (pdfResponse.ok) {
               const pdfBlob = await pdfResponse.blob();
@@ -515,11 +513,11 @@ const FormPage = () => {
     for (let i = 0; i < pdfSubmissions.length; i++) {
       const submission = pdfSubmissions[i];
       try {
+        const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+        const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+        const API_BASE = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
         const response = await fetch(
-          `${
-            process.env.REACT_APP_API_URL ||
-            "https://jamalpur-chamber-backend-b61d.onrender.com/api"
-          }/files/${submission.pdfFile.filename}`
+          `${API_BASE}/files/${submission.pdfFile.filename}`
         );
         if (response.ok) {
           const blob = await response.blob();

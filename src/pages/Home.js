@@ -45,6 +45,7 @@ const Home = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showAllGallery, setShowAllGallery] = useState(false);
 
   // Auto-refresh gallery every 5 minutes to reduce unnecessary renders
   const manualRefreshGallery = useAutoRefresh(
@@ -477,9 +478,12 @@ const Home = () => {
           >
             <div className="section-header-content">
               <div className="section-text">
-                <h2 className="section-title">
-                  Professional Meetings & Events
-                </h2>
+                <div className="section-title-wrapper">
+                  <FaHandshake className="section-title-icon" />
+                  <h2 className="section-title">
+                    Professional Meetings & Events
+                  </h2>
+                </div>
                 <p className="section-subtitle">
                   Engaging in high-level discussions and strategic partnerships
                 </p>
@@ -498,7 +502,7 @@ const Home = () => {
 
           <div className="gallery-grid">
             {galleryImages.length > 0 ? (
-              galleryImages.map((image, index) => (
+              (showAllGallery ? galleryImages : galleryImages.slice(0, 6)).map((image, index) => (
                 <motion.div
                   key={image._id || image.id || index}
                   className="gallery-item small-gallery-item"
@@ -756,6 +760,53 @@ const Home = () => {
               </>
             )}
           </div>
+
+          {/* See More / Show Less Button */}
+          {galleryImages.length > 6 && (
+            <motion.div
+              className="gallery-see-more-container"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              {!showAllGallery ? (
+                <button
+                  className="gallery-see-more-btn"
+                  onClick={() => {
+                    setShowAllGallery(true);
+                    const section = document.querySelector('.meetings-gallery');
+                    if (section) {
+                      window.scrollTo({
+                        top: section.offsetTop - 100,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                >
+                  <span>See More</span>
+                  <FaArrowRight />
+                </button>
+              ) : (
+                <button
+                  className="gallery-see-more-btn"
+                  onClick={() => {
+                    setShowAllGallery(false);
+                    const section = document.querySelector('.meetings-gallery');
+                    if (section) {
+                      window.scrollTo({
+                        top: section.offsetTop - 100,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                >
+                  <span>Show Less</span>
+                  <FaArrowRight style={{ transform: 'rotate(180deg)' }} />
+                </button>
+              )}
+            </motion.div>
+          )}
         </div>
       </section>
 

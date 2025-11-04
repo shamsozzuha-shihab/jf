@@ -37,22 +37,17 @@ export const NewsProvider = ({ children }) => {
 
   // WebSocket event listeners for real-time updates
   useEffect(() => {
-    console.log('🔌 NewsContext: Socket effect triggered', { socket: !!socket, isConnected });
     
     if (!socket || !isConnected) {
-      console.log('❌ NewsContext: Socket not ready', { socket: !!socket, isConnected });
       return;
     }
 
-    console.log('✅ NewsContext: Setting up WebSocket listeners for news events');
 
     const handleNewsCreated = (newNews) => {
-      console.log('📰 NewsContext: New news created via WebSocket:', newNews);
       setNews(prevNews => [newNews, ...prevNews]);
     };
 
     const handleNewsUpdated = (updatedNews) => {
-      console.log('📝 News updated:', updatedNews);
       setNews(prevNews => 
         prevNews.map(newsItem => 
           newsItem.id === updatedNews.id || newsItem._id === updatedNews.id 
@@ -63,7 +58,6 @@ export const NewsProvider = ({ children }) => {
     };
 
     const handleNewsDeleted = (deletedNews) => {
-      console.log('🗑️ News deleted:', deletedNews);
       setNews(prevNews => 
         prevNews.filter(newsItem => 
           newsItem.id !== deletedNews.id && newsItem._id !== deletedNews.id
@@ -86,10 +80,8 @@ export const NewsProvider = ({ children }) => {
 
   const refreshNews = async () => {
     try {
-      console.log('🔄 NewsContext: Refreshing news...');
       setLoading(true);
       const newsData = await apiService.getNews();
-      console.log('📰 NewsContext: Received news data:', newsData);
       setNews(newsData);
     } catch (error) {
       console.error('❌ NewsContext: Error refreshing news:', error);

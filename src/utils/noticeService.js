@@ -1,8 +1,9 @@
 // Notice service to handle both API and localStorage fallback
 class NoticeService {
   constructor() {
-    this.apiBaseUrl =
-      process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+    const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+    const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    this.apiBaseUrl = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
     this.cacheKey = "notices";
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
   }
@@ -10,26 +11,20 @@ class NoticeService {
   // Get notices with API fallback to localStorage
   async getNotices() {
     try {
-      console.log("🌐 Fetching notices from API...");
       // Try API first
       const response = await fetch(`${this.apiBaseUrl}/notices`);
       if (response.ok) {
         const notices = await response.json();
-        console.log("✅ API notices response:", notices);
         // Cache successful API response
         this.setCache(notices);
         return notices;
-      } else {
-        console.log("❌ API response not ok:", response.status);
       }
     } catch (error) {
-      console.log("❌ API not available, using localStorage fallback:", error);
+      // API not available, will use localStorage fallback
     }
 
     // Fallback to localStorage
-    console.log("💾 Using localStorage fallback...");
     const cachedNotices = this.getFromCache();
-    console.log("📦 Cached notices:", cachedNotices);
     return cachedNotices;
   }
 
@@ -37,7 +32,6 @@ class NoticeService {
   async createNotice(noticeData) {
     const token = localStorage.getItem("token");
 
-    console.log("📤 Creating notice via API...");
 
     // Create FormData for file upload
     const formData = new FormData();
@@ -64,11 +58,9 @@ class NoticeService {
     }
 
     const result = await response.json();
-    console.log("✅ Notice created successfully:", result);
 
     // Clear cache to force refresh
     this.clearCache();
-    console.log("🗑️ Cache cleared");
 
     return result;
   }
@@ -77,7 +69,6 @@ class NoticeService {
   async updateNotice(id, noticeData) {
     const token = localStorage.getItem("token");
 
-    console.log("📝 Updating notice via API...");
 
     // Create FormData for file upload
     const formData = new FormData();
@@ -104,11 +95,9 @@ class NoticeService {
     }
 
     const result = await response.json();
-    console.log("✅ Notice updated successfully:", result);
 
     // Clear cache to force refresh
     this.clearCache();
-    console.log("🗑️ Cache cleared");
 
     return result;
   }
@@ -117,7 +106,6 @@ class NoticeService {
   async deleteNotice(id) {
     const token = localStorage.getItem("token");
 
-    console.log("🗑️ Deleting notice via API...");
     const response = await fetch(`${this.apiBaseUrl}/notices/${id}`, {
       method: "DELETE",
       headers: {
@@ -132,11 +120,9 @@ class NoticeService {
     }
 
     const result = await response.json();
-    console.log("✅ Notice deleted successfully:", result);
 
     // Clear cache to force refresh
     this.clearCache();
-    console.log("🗑️ Cache cleared");
 
     return result;
   }

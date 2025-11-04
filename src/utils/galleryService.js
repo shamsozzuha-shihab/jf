@@ -1,8 +1,9 @@
 // Gallery service - API only, no localStorage
 class GalleryService {
   constructor() {
-    this.apiBaseUrl =
-      process.env.REACT_APP_API_URL || "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+    const PRODUCTION_API = "https://jamalpur-chamber-backend-b61d.onrender.com/api";
+    const LOCAL_API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    this.apiBaseUrl = process.env.NODE_ENV === "production" ? PRODUCTION_API : LOCAL_API;
   }
 
   // Get gallery images from API

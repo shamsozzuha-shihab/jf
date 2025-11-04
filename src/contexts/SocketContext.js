@@ -22,12 +22,13 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (!isWebSocketEnabled) {
-      console.log("🔌 WebSocket disabled via environment variable");
       return;
     }
 
-    // Initialize socket connection - Use env variable if available, otherwise fallback
-    const socketUrl = process.env.REACT_APP_SOCKET_URL || "https://jamalpur-chamber-backend-b61d.onrender.com";
+    // Initialize socket connection - Use local backend in development
+    const PRODUCTION_SOCKET_URL = "https://jamalpur-chamber-backend-b61d.onrender.com";
+    const LOCAL_SOCKET_URL = process.env.REACT_APP_SOCKET_URL || "http://localhost:5000";
+    const socketUrl = process.env.NODE_ENV === "production" ? PRODUCTION_SOCKET_URL : LOCAL_SOCKET_URL;
     const newSocket = io(socketUrl, {
       transports: ["polling", "websocket"], // Try polling first, then websocket
       timeout: 30000, // Increased timeout
@@ -40,21 +41,17 @@ export const SocketProvider = ({ children }) => {
 
     // Connection event handlers
     newSocket.on("connect", () => {
-      console.log("🔌 Connected to WebSocket server");
       setIsConnected(true);
 
       // Join appropriate room based on user role
       if (isAdmin) {
         newSocket.emit("join-admin");
-        console.log("👑 SocketContext: Joined admin room");
       } else {
         newSocket.emit("join-user");
-        console.log("👤 SocketContext: Joined user room");
       }
     });
 
     newSocket.on("disconnect", () => {
-      console.log("🔌 Disconnected from WebSocket server");
       setIsConnected(false);
     });
 
@@ -64,7 +61,6 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on("reconnect", (attemptNumber) => {
-      console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
       setIsConnected(true);
     });
 
@@ -90,10 +86,8 @@ export const SocketProvider = ({ children }) => {
     if (socket && isConnected && isWebSocketEnabled) {
       if (isAdmin) {
         socket.emit("join-admin");
-        console.log("👑 Rejoined admin room");
       } else {
         socket.emit("join-user");
-        console.log("👤 Rejoined user room");
       }
     }
   }, [socket, isConnected, isAdmin, isWebSocketEnabled]);

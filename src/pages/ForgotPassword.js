@@ -20,18 +20,14 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      console.log('Requesting reset link for:', email);
       const data = await apiService.forgotPassword(email);
-      console.log('Reset link response:', data);
       
       setSuccess(true);
       
       // If email failed, show reset URL on screen
       if (data.resetUrl) {
-        console.log('Email failed, showing reset URL on screen:', data.resetUrl);
         setResetUrl(data.resetUrl);
       } else {
-        console.log(`Reset link sent to email successfully via ${data.emailMethod}!`);
       }
     } catch (err) {
       console.error('Send reset link error:', err);
