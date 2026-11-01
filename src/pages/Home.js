@@ -950,7 +950,7 @@ const Home = () => {
                 <FaPhone />
                 <div>
                   <h4>Phone</h4>
-                  <p>+8801922348844</p>
+                  <p>+8801711-636897</p>
                 </div>
               </div>
             </div>
